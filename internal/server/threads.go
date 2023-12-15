@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"saitface/internal/utils"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -28,6 +29,31 @@ func (s *Server) ThreadsRouter() *chi.Mux {
 	r.Post("/", s.CreateNewThread)
 
 	return r
+}
+
+func (s *Server) QueryOneThread(id int) (Thread, error) {
+	var thread Thread
+
+	row := s.DB.QueryRow("SELECT * FROM threads WHERE id=$1", id)
+
+	err := row.Scan(&thread)
+
+	return thread, err
+}
+
+func (s *Server) GetOneThread(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil{
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Incorrect ID Value"))
+		return
+	}
+
+	thread, err := s.QueryOneThread(id)
+
+	utils.SendJSON(w, thread)
 }
 
 func (s *Server) QueryAllThreads() ([]Thread, error) {
