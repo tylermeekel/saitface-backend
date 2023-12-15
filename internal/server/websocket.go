@@ -47,7 +47,7 @@ func (server *Server) NewMelody() *melody.Melody {
 
 				checkedThreadID := threadVal.(int)
 
-				if checkedThreadID == message.ThreadID && checkedSession != s {
+				if checkedThreadID == message.ThreadID {
 					return true
 				} else {
 					return false
