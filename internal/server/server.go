@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	_ "github.com/lib/pq"
@@ -23,7 +24,7 @@ type Server struct {
 func (s *Server) RunServer() {
 	mux := chi.NewMux()
 
-	s.Melody = NewMelody()
+	s.Melody = s.NewMelody()
 
 	rc := resty.New()
 
@@ -35,6 +36,9 @@ func (s *Server) RunServer() {
 	}
 
 	s.DB = db
+
+	s.QueryDeleteOldThreads()
+	go s.DeleteOldThreadsTick()
 
 	mux.Get("/ws", s.WrapMelody)
 	mux.Mount("/threads", s.ThreadsRouter())
@@ -53,4 +57,28 @@ func (s *Server) WrapMelody(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
+}
+
+func (s *Server) DeleteOldThreadsTick() {
+	for range time.Tick(5 * time.Minute) {
+		s.QueryDeleteOldThreads()
+	}
+}
+
+func (s *Server) QueryDeleteOldThreads() {
+	fmt.Println("Running Delete Old Threads Command")
+	queryRows, err := s.DB.Query("DELETE FROM threads WHERE last_bumped < NOW() - interval '5 minute' RETURNING id")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var ids []int
+
+	for queryRows.Next() {
+		var id int
+		queryRows.Scan(&id)
+		ids = append(ids, id)
+	}
+
+	fmt.Printf("Removed %d rows\n", len(ids))
 }

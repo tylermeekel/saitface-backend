@@ -80,15 +80,20 @@ func (s *Server) GetThreadTitle(query string) string {
 		Title string `json:"title"`
 	}
 
+	tsurl := os.Getenv("TITLE_SERVER_URL")
+	fmt.Println(tsurl)
+
 	resp, err := s.RestyClient.R().
 		SetBody(query).
-		Post(os.Getenv("TITLE_SERVER_URL"))
+		Post(tsurl)
 
 	if err != nil {
+		fmt.Println(err)
 		return ""
 	}
 
 	str := resp.String()
+	fmt.Println(str)
 
 	json.Unmarshal([]byte(str), &response)
 
@@ -121,4 +126,16 @@ func (s *Server) GetAllThreads(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.SendJSON(w, threads)
+}
+
+func (s *Server) QueryBumpThread(id int) {
+	currentTime := time.Now()
+
+	row := s.DB.QueryRow("UPDATE threads SET last_bumped=$1 WHERE id=$2 RETURNING id", currentTime, id)
+
+	var returnedID int
+	err := row.Scan(&returnedID)
+	if err != nil {
+		fmt.Println("Error bumping thread", err)
+	}
 }

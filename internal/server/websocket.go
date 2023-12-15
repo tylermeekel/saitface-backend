@@ -21,7 +21,7 @@ type WebSocketMessage struct {
 	Content  string        `json:"content"`
 }
 
-func NewMelody() *melody.Melody {
+func (server *Server) NewMelody() *melody.Melody {
 	m := melody.New()
 
 	m.HandleConnect(func(s *melody.Session) {
@@ -38,6 +38,7 @@ func NewMelody() *melody.Melody {
 			s.Set("thread", message.ThreadID)
 			fmt.Println("Set the ID")
 		case SendMessage:
+			server.QueryBumpThread(message.ThreadID)
 			m.BroadcastFilter(data, func(checkedSession *melody.Session) bool {
 				threadVal, exists := checkedSession.Get("thread")
 				if !exists {
