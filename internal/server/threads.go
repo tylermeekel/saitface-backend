@@ -26,6 +26,7 @@ func (s *Server) ThreadsRouter() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Get("/", s.GetAllThreads)
+	r.Get("/{id}", s.GetOneThread)
 	r.Post("/", s.CreateNewThread)
 
 	return r
@@ -45,7 +46,7 @@ func (s *Server) GetOneThread(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 
 	id, err := strconv.Atoi(idStr)
-	if err != nil{
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Incorrect ID Value"))
 		return
