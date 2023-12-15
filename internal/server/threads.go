@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"saitface/internal/utils"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -54,19 +54,46 @@ func (s *Server) QueryNewThread(interests []string) (Thread, error) {
 		return thread, errors.New("Error: Not enough interests, need at least 1")
 	}
 
-	query := strings.Join(interests, "-")
+	var interestStruct struct {
+		Interests []string `json:"interests"`
+	}
 
-	title := GetThreadTitle(query)
+	interestStruct.Interests = interests
+
+	b, err := json.Marshal(interestStruct)
+	if err != nil {
+		return thread, errors.New("Error marshalling interests")
+	}
+
+	title := s.GetThreadTitle(string(b))
 
 	row := s.DB.QueryRow("INSERT INTO threads(title, interests) VALUES($1, $2) RETURNING *", title, pq.Array(interests))
 
-	err := row.Scan(&thread.ID, &thread.Title, pq.Array(&thread.Interests), &thread.LastBumped)
+	err = row.Scan(&thread.ID, &thread.Title, pq.Array(&thread.Interests), &thread.LastBumped)
 
 	return thread, err
 }
 
-func GetThreadTitle(query string) string {
-	return "Title"
+func (s *Server) GetThreadTitle(query string) string {
+	fmt.Println(query)
+	var response struct {
+		Title string `json:"title"`
+	}
+
+	resp, err := s.RestyClient.R().
+		SetBody(query).
+		Post(os.Getenv("TITLE_SERVER_URL"))
+
+	if err != nil {
+		return ""
+	}
+
+	str := resp.String()
+
+	json.Unmarshal([]byte(str), &response)
+
+	fmt.Println(response.Title)
+	return response.Title
 }
 
 func (s *Server) CreateNewThread(w http.ResponseWriter, r *http.Request) {

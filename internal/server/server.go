@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-resty/resty/v2"
 	_ "github.com/lib/pq"
 
 	"github.com/go-chi/chi/v5"
@@ -14,17 +15,22 @@ import (
 )
 
 type Server struct {
-	DB *sql.DB
-	Melody *melody.Melody
+	DB          *sql.DB
+	Melody      *melody.Melody
+	RestyClient *resty.Client
 }
 
-func (s *Server) RunServer() { 
+func (s *Server) RunServer() {
 	mux := chi.NewMux()
 
 	s.Melody = NewMelody()
 
+	rc := resty.New()
+
+	s.RestyClient = rc
+
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
-	if err != nil{
+	if err != nil {
 		log.Fatalln(err)
 	}
 
@@ -39,12 +45,12 @@ func (s *Server) RunServer() {
 	}
 
 	fmt.Println("Listening on port", port)
-	http.ListenAndServe(":" + port, mux)
+	http.ListenAndServe(":"+port, mux)
 }
 
 func (s *Server) WrapMelody(w http.ResponseWriter, r *http.Request) {
 	err := s.Melody.HandleRequest(w, r)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 	}
 }
