@@ -33,8 +33,13 @@ func (s *Server) RunServer() {
 	mux.Get("/ws", s.WrapMelody)
 	mux.Mount("/threads", s.ThreadsRouter())
 
-	fmt.Println("Listening on port 3000")
-	http.ListenAndServe(":3000", mux)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	fmt.Println("Listening on port", port)
+	http.ListenAndServe(":" + port, mux)
 }
 
 func (s *Server) WrapMelody(w http.ResponseWriter, r *http.Request) {
