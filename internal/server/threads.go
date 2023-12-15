@@ -37,7 +37,7 @@ func (s *Server) QueryOneThread(id int) (Thread, error) {
 
 	row := s.DB.QueryRow("SELECT * FROM threads WHERE id=$1", id)
 
-	err := row.Scan(&thread)
+	err := row.Scan(&thread.ID, &thread.Title, pq.Array(&thread.Interests), &thread.LastBumped)
 
 	return thread, err
 }
@@ -53,6 +53,9 @@ func (s *Server) GetOneThread(w http.ResponseWriter, r *http.Request) {
 	}
 
 	thread, err := s.QueryOneThread(id)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	utils.SendJSON(w, thread)
 }
