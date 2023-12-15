@@ -23,7 +23,7 @@ func (s *Server) RunServer() {
 
 	s.Melody = NewMelody()
 
-	db, err := sql.Open("postgres", os.Getenv("POSTGRES_URI"))
+	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil{
 		log.Fatalln(err)
 	}
@@ -31,6 +31,7 @@ func (s *Server) RunServer() {
 	s.DB = db
 
 	mux.Get("/ws", s.WrapMelody)
+	mux.Mount("/threads", s.ThreadsRouter())
 
 	fmt.Println("Listening on port 3000")
 	http.ListenAndServe(":3000", mux)

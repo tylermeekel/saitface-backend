@@ -14,5 +14,6 @@ func SendJSON(w http.ResponseWriter, data any) {
 
 	resp.Data = data
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
